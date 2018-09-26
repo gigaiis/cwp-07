@@ -5,5 +5,5 @@ module.exports.createArticle = function createArticle(req, res, payload, cb) {
 	log('/api/articles/create', payload);
     payload.id = Date.now();
     articles.push(payload);
-    cb(null, payload);
+    cb(null, payload, 'application/json');
 }

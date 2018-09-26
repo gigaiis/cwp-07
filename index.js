@@ -30,6 +30,7 @@ const handlers = {
     '/form.html' 			: getHtml.getFormHtml,
     '/app.js' 				: getJs.appJS,
     '/form.js' 				: getJs.formJS,
+    '/index.js' 			: getJs.index,
     '/site.css' 			: getCss.siteCSS
 };
 
@@ -37,6 +38,7 @@ const server = http.createServer((req, res) => {
 	parseBodyJson(req, (err, payload) => {
 		const handler = getHandler(req.url);
 		handler(req, res, payload, (err, result, header) => {
+			if (header === undefined) res.setHeader('Content-Type', 'application/json');
 			if (err) {
 				res.statusCode = err.code;		
 				res.setHeader('Content-Type', 'application/json');	
@@ -44,11 +46,10 @@ const server = http.createServer((req, res) => {
 			} else {
 				res.statusCode = 200;
 				res.setHeader('Content-Type', header);
-				if(header === 'application/json'){
+				if (header === 'application/json') {
 	                fs.createWriteStream('articles.json').write(JSON.stringify(articles));
 	                res.end(JSON.stringify(result));
-	            }
-	            else res.end(result);
+	            } else res.end(result);
 			}		
 		});
 	});
