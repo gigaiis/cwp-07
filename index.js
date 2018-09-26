@@ -3,6 +3,9 @@ const fs = require('fs');
 const hostname = '127.0.0.1';
 const port = 3000;
 
+const getHtml = require('./getHtml.js');
+const getJs = require('./getJs.js');
+const getCss = require('./getCss.js');
 const articles = require('./articles.json');
 const readAll = require('./readAll.js').readAll;
 const read = require('./read.js').read;
@@ -21,21 +24,31 @@ const handlers = {
 	'/api/articles/delete' 	: deleteArticle,
 	'/api/comments/create' 	: createComment,
 	'/api/comments/delete' 	: deleteComment,
-	'/api/logs'				: logs
+	'/api/logs'				: logs,
+	'/' 					: getHtml.getIndexHtml,
+    '/index.html' 			: getHtml.getIndexHtml,
+    '/form.html' 			: getHtml.getFormHtml,
+    '/app.js' 				: getJs.appJS,
+    '/form.js' 				: getJs.formJS,
+    '/site.css' 			: getCss.siteCSS
 };
 
 const server = http.createServer((req, res) => {
 	parseBodyJson(req, (err, payload) => {
 		const handler = getHandler(req.url);
-		handler(req, res, payload, (err, result) => {
-			res.setHeader('Content-Type', 'application/json');
+		handler(req, res, payload, (err, result, header) => {
 			if (err) {
-				res.statusCode = err.code;			
+				res.statusCode = err.code;		
+				res.setHeader('Content-Type', 'application/json');	
 				res.end(JSON.stringify(err));
 			} else {
-				fs.createWriteStream('articles.json').write(JSON.stringify(articles));
 				res.statusCode = 200;
-				res.end(JSON.stringify(result));
+				res.setHeader('Content-Type', header);
+				if(header === 'application/json'){
+	                fs.createWriteStream('articles.json').write(JSON.stringify(articles));
+	                res.end(JSON.stringify(result));
+	            }
+	            else res.end(result);
 			}		
 		});
 	});
@@ -51,7 +64,8 @@ function parseBodyJson(req, cb) {
 		body.push(chunk);
 	}).on('end', () => {
 		body = Buffer.concat(body).toString();
-		let params = JSON.parse(body);
+		let params;
+        if (body !== "") params = JSON.parse(body);
 		cb(null, params);
 	});
 }
