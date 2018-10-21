@@ -36,22 +36,28 @@ const handlers = {
 
 const server = http.createServer((req, res) => {
 	parseBodyJson(req, (err, payload) => {
-		const handler = getHandler(req.url);
-		handler(req, res, payload, (err, result, header) => {
-			if (header === undefined) res.setHeader('Content-Type', 'application/json');
-			if (err) {
-				res.statusCode = err.code;		
-				res.setHeader('Content-Type', 'application/json');	
-				res.end(JSON.stringify(err));
-			} else {
-				res.statusCode = 200;
-				res.setHeader('Content-Type', header);
-				if (header === 'application/json') {
-	                fs.createWriteStream('articles.json').write(JSON.stringify(articles));
-	                res.end(JSON.stringify(result));
-	            } else res.end(result);
-			}		
-		});
+		if (err) {
+			res.setHeader('Content-Type', 'application/json');
+			res.statusCode = 200;
+			res.end(JSON.stringify(err));
+		} else {
+			const handler = getHandler(req.url);
+			handler(req, res, payload, (err, result, header) => {
+				if (header === undefined) res.setHeader('Content-Type', 'application/json');
+				if (err) {
+					res.statusCode = err.code;		
+					res.setHeader('Content-Type', 'application/json');	
+					res.end(JSON.stringify(err));
+				} else {
+					res.statusCode = 200;
+					res.setHeader('Content-Type', header);
+					if (header === 'application/json') {
+		                fs.createWriteStream('articles.json').write(JSON.stringify(articles));
+		                res.end(JSON.stringify(result));
+		            } else res.end(result);
+				}		
+			});
+		}
 	});
 });
 
@@ -65,8 +71,14 @@ function parseBodyJson(req, cb) {
 		body.push(chunk);
 	}).on('end', () => {
 		body = Buffer.concat(body).toString();
-		let params;
-        if (body !== "") params = JSON.parse(body);
-		cb(null, params);
+		try
+		{
+			let params;
+	        if (body !== "") params = JSON.parse(body);
+			cb(null, params);
+		}
+		catch (err) {
+			cb({'error': 'error parse input', 'errObj': err});
+		}
 	});
 }

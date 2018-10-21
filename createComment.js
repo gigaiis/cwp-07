@@ -2,7 +2,9 @@ const log = require('./log').log;
 let articles = require('./articles.json');
 
 module.exports.createComment = function createComment(req, res, payload, cb) {
-	if (payload.articleId == undefined) cb( { code: 400, message: 'Invalid request' } );
+	if ((payload.articleId == undefined) || (payload.text == undefined) ||
+		(payload.date == undefined) || (payload.author == undefined)) 
+		cb({ code: 400, message: 'Invalid request'});
 	else {
 	    let ind = articles.findIndex(i => i.id == payload.articleId);
 	    if (ind != -1) {
